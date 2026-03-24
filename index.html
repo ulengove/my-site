@@ -2,103 +2,89 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Evgesha Ultimate</title>
+<title>Evgesha</title>
 
 <style>
 
-/* ===== БАЗА ===== */
+/* ===== ФОН ===== */
 body {
   margin:0;
-  font-family:Arial, sans-serif;
-  background:#0f0f0f;
+  font-family: 'Segoe UI', sans-serif;
+  background: radial-gradient(circle at top, #0f2027, #203a43, #000);
   color:white;
+  text-align:center;
   overflow-x:hidden;
-  transition:0.5s;
 }
 
+/* ===== АНИМАЦИЯ ФОНА ===== */
+canvas {
+  position:fixed;
+  top:0;
+  left:0;
+  z-index:-1;
+}
+
+/* ===== КАРТОЧКА ===== */
+.container {
+  margin-top:80px;
+  backdrop-filter: blur(20px);
+  background: rgba(255,255,255,0.05);
+  padding:40px;
+  border-radius:20px;
+  box-shadow:0 0 40px rgba(0,255,150,0.2);
+  display:inline-block;
+}
+
+/* ===== ТЕКСТ ===== */
 h1 {
-  margin-top:60px;
   font-size:3em;
-  text-shadow:0 0 20px #00ff88;
+  text-shadow:0 0 20px #00ffcc;
 }
 
-button {
-  padding:12px 20px;
-  margin:8px;
+/* ===== КНОПКИ ===== */
+.btn {
+  padding:12px 25px;
+  margin:10px;
   border:none;
-  border-radius:10px;
+  border-radius:12px;
+  background: linear-gradient(45deg,#00ffcc,#00ff88);
   cursor:pointer;
   font-weight:bold;
-  background:#00ff88;
-  color:black;
   transition:0.2s;
 }
 
-button:hover {
+.btn:hover {
   transform:scale(1.1);
+  box-shadow:0 0 20px #00ffcc;
 }
 
-/* ===== СЕКЦИИ ===== */
-.section {
-  padding:40px;
-}
-
-/* ===== НЕОН ===== */
-.neon {
-  text-shadow:0 0 10px #00ff88,0 0 20px #00ff88;
-}
-
-/* ===== СЕТКА ИГРЫ ===== */
+/* ===== ИГРА ===== */
 .grid {
   display:grid;
-  grid-template-columns:repeat(5,70px);
+  grid-template-columns:repeat(5,60px);
   gap:10px;
   justify-content:center;
   margin-top:20px;
 }
 
 .cell {
-  width:70px;
-  height:70px;
-  background:#222;
+  width:60px;
+  height:60px;
+  background:#111;
   border-radius:10px;
   cursor:pointer;
+  transition:0.2s;
 }
 
 .safe { background:#00ff88 !important; }
 .mine { background:red !important; }
 
-/* ===== АНИМАЦИИ ===== */
-@keyframes glow {
-  0% {text-shadow:0 0 5px #00ff88;}
-  50% {text-shadow:0 0 25px #00ff88;}
-  100% {text-shadow:0 0 5px #00ff88;}
-}
+/* ===== СЕКРЕТ ===== */
+.hidden { display:none; }
 
-.glow {
-  animation:glow 2s infinite;
-}
-
-/* ===== ТЕМЫ ===== */
-.light {
-  background:white;
-  color:black;
-}
-
-/* ===== СЕКРЕТЫ ===== */
-.hidden {
-  display:none;
-}
-
-/* ===== ПУЛЬС ===== */
-@keyframes pulse {
-  0% {transform:scale(1);}
-  50% {transform:scale(1.2);}
-  100% {transform:scale(1);}
-}
-
-.pulse {
-  animation:pulse 1s infinite;
+/* ===== НЕОН ===== */
+.neon {
+  text-shadow:0 0 10px #00ffcc,0 0 30px #00ffcc;
 }
 
 </style>
@@ -106,80 +92,89 @@ button:hover {
 
 <body>
 
-<h1 class="glow">Evgesha 👾</h1>
-<p>Ultimate Website</p>
+<canvas id="bg"></canvas>
 
-<div class="section">
+<div class="container">
 
-<button onclick="startGame()">🎮 Играть</button>
-<button onclick="toggleTheme()">🌙 Тема</button>
-<button onclick="randomMsg()">💬 Сообщение</button>
-<button onclick="secret()">🔥 Секрет</button>
-<button onclick="hack()">🧪 Хак режим</button>
+<h1 class="neon">Evgesha 👾</h1>
+<p>Welcome to my digital zone</p>
+
+<button class="btn" onclick="startGame()">🎮 Играть</button>
+<button class="btn" onclick="secret()">🔥 Секрет</button>
+<button class="btn" onclick="sound()">🔊 Звук</button>
+<button class="btn" onclick="hack()">🧪 Hack</button>
 
 <a href="https://t.me/ulevgesha" target="_blank">
-<button>💬 Telegram</button>
+<button class="btn">💬 Telegram</button>
 </a>
 
-</div>
-
-<div id="msg"></div>
-
-<div id="game" class="section hidden">
-<h2>Игра: не попади на мину</h2>
+<div id="game" class="hidden">
 <div id="score">Очки: 0</div>
-<div id="status">Живи 😈</div>
 <div class="grid" id="grid"></div>
 </div>
 
-<div id="secretBlock" class="hidden section">
-<h2>Ты нашёл секрет 😎</h2>
-<p>Теперь ты в системе...</p>
+<div id="secretBlock" class="hidden">
+<h2>😎 Ты нашёл скрытый уровень</h2>
+</div>
+
 </div>
 
 <script>
 
-/* ===== ДАННЫЕ ===== */
-let score = 0;
-let mines = [];
-let gameActive = false;
+/* ===== ЧАСТИЦЫ ===== */
+let canvas=document.getElementById("bg");
+let ctx=canvas.getContext("2d");
 
-/* ===== СТАРТ ИГРЫ ===== */
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
+let particles=[];
+for(let i=0;i<80;i++){
+  particles.push({
+    x:Math.random()*canvas.width,
+    y:Math.random()*canvas.height,
+    r:Math.random()*2
+  });
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle="#00ffcc";
+  particles.forEach(p=>{
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fill();
+    p.y+=0.3;
+    if(p.y>canvas.height) p.y=0;
+  });
+  requestAnimationFrame(draw);
+}
+draw();
+
+/* ===== ИГРА ===== */
+let mine;
+let score=0;
+
 function startGame(){
-  gameActive = true;
-  score = 0;
-  document.getElementById("score").innerText="Очки: 0";
   document.getElementById("game").classList.remove("hidden");
-
-  let grid = document.getElementById("grid");
+  let grid=document.getElementById("grid");
   grid.innerHTML="";
+  score=0;
 
-  mines = [];
-  while(mines.length<3){
-    let m = Math.floor(Math.random()*25);
-    if(!mines.includes(m)) mines.push(m);
-  }
+  mine=Math.floor(Math.random()*25);
 
   for(let i=0;i<25;i++){
     let cell=document.createElement("div");
     cell.className="cell";
 
     cell.onclick=()=>{
-      if(!gameActive) return;
-
-      if(mines.includes(i)){
+      if(i===mine){
         cell.classList.add("mine");
-        document.getElementById("status").innerText="💀 Ты умер";
-        gameActive=false;
+        alert("💀 проиграл");
       } else {
         cell.classList.add("safe");
         score++;
         document.getElementById("score").innerText="Очки: "+score;
-
-        if(score===22){
-          document.getElementById("status").innerText="🏆 ПОБЕДА";
-          gameActive=false;
-        }
       }
     };
 
@@ -187,88 +182,38 @@ function startGame(){
   }
 }
 
-/* ===== СООБЩЕНИЯ ===== */
-function randomMsg(){
-  let arr=[
-    "Ты легенда 💀",
-    "Сайт имба",
-    "Нажми секрет 👀",
-    "Ты в матрице",
-    "Где ты это нашёл?"
-  ];
-  document.getElementById("msg").innerText =
-    arr[Math.floor(Math.random()*arr.length)];
-}
-
-/* ===== ТЕМА ===== */
-function toggleTheme(){
-  document.body.classList.toggle("light");
-}
-
 /* ===== СЕКРЕТ ===== */
 function secret(){
   document.getElementById("secretBlock").classList.toggle("hidden");
 }
 
-/* ===== ХАК РЕЖИМ ===== */
-function hack(){
-  document.body.style.background="black";
-  document.body.innerHTML+="<p class='pulse'>ACCESS GRANTED</p>";
+/* ===== ЗВУК ===== */
+function sound(){
+  let audio=new Audio("https://www.soundjay.com/button/sounds/button-3.mp3");
+  audio.play();
 }
 
-/* ===== ПАСХАЛКА: КЛАВИШИ ===== */
+/* ===== ХАК ===== */
+function hack(){
+  document.body.style.background="black";
+  document.body.innerHTML+="<h2 style='color:#00ff00'>ACCESS GRANTED</h2>";
+}
+
+/* ===== ПАСХАЛКИ ===== */
+let clicks=0;
+document.addEventListener("click",()=>{
+  clicks++;
+  if(clicks===15){
+    alert("👀 ты что-то ищешь...");
+  }
+});
+
+/* ===== КОД ===== */
 let code="";
 document.addEventListener("keydown",e=>{
   code+=e.key;
-
-  if(code.includes("1337")){
-    alert("😎 ХАКЕР");
-  }
-
-  if(code.length>10) code="";
-});
-
-/* ===== КЛИК ПАСХАЛКА ===== */
-let clicks=0;
-document.body.addEventListener("click",()=>{
-  clicks++;
-  if(clicks===20){
-    alert("👀 ты слишком много кликаешь");
-  }
-});
-
-/* ===== АВТО СООБЩЕНИЕ ===== */
-setInterval(()=>{
-  console.log("ты наблюдаешься...");
-},3000);
-
-/* ===== ФЕЙК ЗАГРУЗКА ===== */
-window.onload=()=>{
-  console.log("SYSTEM LOADED");
-};
-
-/* ===== ЕЩЁ ПРИКОЛЫ ===== */
-function randomBg(){
-  let colors=["#111","#222","#333","#000"];
-  document.body.style.background =
-    colors[Math.floor(Math.random()*colors.length)];
-}
-
-setInterval(randomBg,15000);
-
-/* ===== ЕЩЁ СЕКРЕТ ===== */
-document.addEventListener("mousemove",e=>{
-  if(e.clientX<10 && e.clientY<10){
-    alert("нашёл угол 😎");
-  }
-});
-
-/* ===== СПАМ СЕКРЕТ ===== */
-let secretClicks=0;
-document.addEventListener("dblclick",()=>{
-  secretClicks++;
-  if(secretClicks===5){
-    alert("💀 ультра секрет");
+  if(code.includes("secret")){
+    alert("😎 найден код");
   }
 });
 
