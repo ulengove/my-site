@@ -1,0 +1,27 @@
+
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#0b1020;
+  color:white;
+}
+#app{padding:20px}
+.card{
+  background:#1a2744;
+  padding:16px;
+  border-radius:12px;
+}
+
+.navbar{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:15px;
+}
+
+.navbar button{
+  padding:10px 14px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+}
